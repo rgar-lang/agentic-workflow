@@ -1,0 +1,42 @@
+[
+    {
+        "step": "planner",
+        "status": "running",
+        "timestamp": "2026-06-25 11:39:14.528041"
+    },
+    {
+        "step": "planner",
+        "status": "completed",
+        "timestamp": "2026-06-25 11:39:19.533462"
+    },
+    {
+        "step": "worker-1",
+        "status": "running",
+        "timestamp": "2026-06-25 11:39:19.535472"
+    },
+    {
+        "step": "worker-2",
+        "status": "running",
+        "timestamp": "2026-06-25 11:39:19.543245"
+    },
+    {
+        "step": "worker-1",
+        "status": "completed",
+        "timestamp": "2026-06-25 11:39:24.550413"
+    },
+    {
+        "step": "worker-2",
+        "status": "completed",
+        "timestamp": "2026-06-25 11:39:24.559105"
+    },
+    {
+        "step": "reviewer",
+        "status": "running",
+        "timestamp": "2026-06-25 11:39:24.571609"
+    },
+    {
+        "step": "reviewer",
+        "status": "completed",
+        "timestamp": "2026-06-25 11:39:29.582572"
+    }
+]
