@@ -1,120 +1,110 @@
 # Agentic Workflow Enterprise
 
-## Overview
+A production-style multi-agent orchestration platform built using **Temporal**, **FastAPI**, and **Python**.
 
-Agentic Workflow Enterprise is a proof-of-concept (POC) that demonstrates an enterprise-grade multi-agent workflow using FastAPI and Temporal.
-
-The system orchestrates multiple AI agents through a durable workflow, provides structured execution traces, exposes REST APIs for monitoring, supports real-time status streaming, and is designed to be extended with isolated execution environments such as Firecracker microVMs or gVisor for production deployments.
-
----
-
-# Architecture
-
-```
-                +----------------------+
-                |      FastAPI         |
-                |   REST API Layer     |
-                +----------+-----------+
-                           |
-                           |
-                    POST /run
-                           |
-                           |
-                +----------v-----------+
-                |  Workflow Orchestrator|
-                +----------+-----------+
-                           |
-                 Planner Activity
-                           |
-          -------------------------------
-          |                             |
-          |                             |
-    Worker Activity 1             Worker Activity 2
-          |                             |
-          -------------------------------
-                           |
-                    Reviewer Activity
-                           |
-                +----------v-----------+
-                | Trace Manager        |
-                | Status Manager       |
-                +----------+-----------+
-                           |
-              --------------------------
-              |                        |
-         /status API             /traces API
-              |
-          Streaming API
-```
-
----
-
-# Technology Stack
-
-- Python 3.11
-- FastAPI
-- Temporal Workflow
-- Temporal Worker
-- Temporal Client
-- Docker
-- Pydantic
-- Pytest
-- AsyncIO
+This project demonstrates how multiple AI agents can collaborate through a durable, retryable workflow while exposing REST APIs for execution, monitoring, and tracing.
 
 ---
 
 # Features
 
 - Multi-Agent Workflow
-- Planner Agent
-- Parallel Worker Agents
-- Reviewer Agent
-- Temporal Durable Workflow
-- Activity Retry Policy
-- Activity Timeout Strategy
+- Temporal Workflow Orchestration
 - FastAPI REST APIs
-- Structured Langfuse-style Execution Traces
-- Workflow Status Monitoring
-- Server-Sent Event (SSE) Streaming
-- Docker Support
-- Unit Test Framework
+- Parallel Worker Execution
+- Langfuse-style Execution Traces
+- Streaming Status Endpoint
+- Docker Sandbox Support
+- Retry & Timeout Strategy
+- Modular Architecture
+- Unit Tests
+- GitHub Ready
+
+---
+
+# Architecture
+
+```
+                 +----------------+
+                 |    Planner     |
+                 +----------------+
+                          |
+                          |
+              ------------------------
+              |                      |
+              ▼                      ▼
+       +-------------+        +-------------+
+       |  Worker-1   |        |  Worker-2   |
+       +-------------+        +-------------+
+              |                      |
+              ------------------------
+                          |
+                          ▼
+                 +----------------+
+                 |    Reviewer    |
+                 +----------------+
+                          |
+                          ▼
+                    Workflow Complete
+```
+
+---
+
+# Technology Stack
+
+| Technology | Purpose |
+|------------|---------|
+| Python 3.11 | Programming Language |
+| FastAPI | REST API |
+| Temporal | Workflow Orchestration |
+| Docker | Sandbox Isolation |
+| AsyncIO | Parallel Agent Execution |
+| Pytest | Testing |
+| JSON | Trace Storage |
 
 ---
 
 # Project Structure
 
 ```
-AgenticWorkflow/
-
+AgenticWorkflow
+│
 ├── activities/
-│   ├── planner_activity.py
-│   ├── worker_activity.py
-│   └── reviewer_activity.py
+│     planner_activity.py
+│     worker_activity.py
+│     reviewer_activity.py
+│
+├── agents/
+│     planner_agent.py
+│     worker_agent.py
+│     reviewer_agent.py
 │
 ├── api/
-│   ├── main.py
-│   └── routes.py
+│     main.py
+│     routes.py
+│
+├── config/
 │
 ├── models/
-│   ├── request_model.py
-│   ├── response_model.py
-│   ├── status_model.py
-│   └── trace_model.py
+│
+├── sandbox/
+│     Dockerfile
+│     sandbox_manager.py
 │
 ├── streaming/
-│   ├── status_manager.py
-│   └── status_stream.py
-│
-├── traces/
-│   └── trace_manager.py
+│     status_manager.py
+│     status_stream.py
 │
 ├── temporal/
-│   ├── worker.py
-│   ├── client.py
-│   └── agent_workflow.py
+│     agent_workflow.py
+│     worker.py
+│     client.py
+│
+├── traces/
+│     trace_manager.py
 │
 ├── workflows/
-│   └── multi_agent_workflow.py
+│     multi_agent_workflow.py
 │
 ├── tests/
 │
@@ -128,58 +118,121 @@ AgenticWorkflow/
 
 # Workflow Execution
 
+The workflow follows this sequence:
+
 ```
 Planner
-
-↓
-
-Worker 1
-      \
-       \
-        ---> Reviewer
-
-Worker 2
+   ↓
+Worker-1  ||  Worker-2
+   ↓
+Reviewer
+   ↓
+Completed
 ```
 
-Execution Order:
-
-1. Planner Agent starts.
-2. Planner completes.
-3. Worker 1 and Worker 2 execute in parallel.
-4. Reviewer validates outputs.
-5. Workflow completes.
-6. Execution traces are recorded.
-7. Workflow status is updated.
+Worker-1 and Worker-2 execute **in parallel** using **asyncio.gather()**.
 
 ---
 
-# Temporal Workflow
+# Installation
 
-The workflow is implemented using Temporal and provides:
+Clone the repository
 
-- Durable execution
-- Retry Policy
-- Activity Timeouts
-- Parallel Activity Execution
-- Workflow History
-- Workflow Monitoring
-- Fault Tolerance
+```bash
+git clone https://github.com/rgar-lang/agentic-workflow.git
+```
 
----
+Navigate into the project
 
-# Retry Strategy
+```bash
+cd agentic-workflow
+```
 
-Each activity is configured with:
+Install dependencies
 
-- Maximum Attempts: 3
-- Start-to-Close Timeout
-- Schedule-to-Close Timeout
-
-This enables automatic retries for transient failures.
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
-# REST APIs
+# Start Temporal
+
+```bash
+docker compose -f temporal/docker-compose-temporal.yml up -d
+```
+
+Verify Temporal UI
+
+```
+http://localhost:8233
+```
+
+---
+
+# Start Temporal Worker
+
+```bash
+python -m temporal.worker
+```
+
+Expected Output
+
+```
+Temporal Worker Started
+```
+
+---
+
+# Start FastAPI
+
+```bash
+python -m uvicorn api.main:app --reload
+```
+
+Open Swagger
+
+```
+http://localhost:8000/docs
+```
+
+---
+
+# Execute Workflow
+
+Execute
+
+```
+POST /run
+```
+
+Expected Response
+
+```json
+{
+    "planner": {
+        "step": "planner",
+        "status": "completed"
+    },
+    "worker1": {
+        "step": "worker-1",
+        "status": "completed"
+    },
+    "worker2": {
+        "step": "worker-2",
+        "status": "completed"
+    },
+    "reviewer": {
+        "step": "reviewer",
+        "status": "completed"
+    },
+    "workflow_status": "completed"
+}
+```
+
+---
+
+# API Endpoints
 
 ## Health Check
 
@@ -187,17 +240,23 @@ This enables automatic retries for transient failures.
 GET /health
 ```
 
-Returns application health.
+Returns
+
+```json
+{
+    "status":"healthy"
+}
+```
 
 ---
 
-## Run Workflow
+## Execute Workflow
 
 ```
 POST /run
 ```
 
-Executes the complete multi-agent workflow.
+Starts the complete Planner → Worker → Reviewer workflow.
 
 ---
 
@@ -207,20 +266,18 @@ Executes the complete multi-agent workflow.
 GET /status
 ```
 
-Returns the current workflow execution status.
-
-Example
+Returns
 
 ```json
 {
-    "current_step": "completed",
-    "status": "completed"
+    "current_step":"completed",
+    "status":"completed"
 }
 ```
 
 ---
 
-## Execution Traces
+## Workflow Traces
 
 ```
 GET /traces
@@ -232,93 +289,132 @@ Example
 
 ```json
 [
-    {
-        "step": "planner",
-        "status": "running",
-        "timestamp": "2026-06-25 11:20:15"
-    },
-    {
-        "step": "planner",
-        "status": "completed",
-        "timestamp": "2026-06-25 11:20:20"
-    }
+  {
+    "step":"planner",
+    "status":"running"
+  },
+  {
+    "step":"planner",
+    "status":"completed"
+  },
+  {
+    "step":"worker-1",
+    "status":"running"
+  },
+  {
+    "step":"worker-2",
+    "status":"running"
+  },
+  {
+    "step":"worker-1",
+    "status":"completed"
+  },
+  {
+    "step":"worker-2",
+    "status":"completed"
+  },
+  {
+    "step":"reviewer",
+    "status":"running"
+  },
+  {
+    "step":"reviewer",
+    "status":"completed"
+  }
 ]
 ```
 
 ---
 
-## Status Streaming
+## Streaming Endpoint
 
 ```
 GET /stream
 ```
 
-Provides real-time workflow status updates using Server-Sent Events (SSE).
+Streams workflow execution updates.
 
 ---
 
-# Running the Application
+# Temporal Features
 
-## Install Dependencies
+This implementation uses Temporal for durable workflow execution.
 
-```
-pip install -r requirements.txt
-```
+Implemented capabilities include:
 
----
+- Durable Workflow Execution
+- Retry Policy
+- Timeout Handling
+- Parallel Activities
+- Worker Orchestration
+- Workflow History
+- Workflow Replay
 
-## Start Temporal Server
+Retry Configuration
 
-```
-docker compose -f temporal/docker-compose-temporal.yml up
-```
-
----
-
-## Start Temporal Worker
-
-```
-python -m temporal.worker
+```python
+RetryPolicy(
+    maximum_attempts=3
+)
 ```
 
----
-
-## Execute Workflow
+Timeouts
 
 ```
-python -m temporal.client
-```
+Start-To-Close Timeout
 
----
-
-## Start FastAPI
-
-```
-python -m uvicorn api.main:app --reload
-```
-
-Swagger UI
-
-```
-http://localhost:8000/docs
+Schedule-To-Close Timeout
 ```
 
 ---
 
-## Temporal UI
+# Langfuse-style Tracing
+
+Each activity records structured execution events.
+
+Example
 
 ```
-http://localhost:8233
+Planner Running
+
+Planner Completed
+
+Worker-1 Running
+
+Worker-2 Running
+
+Worker-1 Completed
+
+Worker-2 Completed
+
+Reviewer Running
+
+Reviewer Completed
+```
+
+These traces can be retrieved using
+
+```
+GET /traces
 ```
 
 ---
 
-# Docker
+# Docker Sandbox
 
-Build and run the application
+The project contains a Docker sandbox module to isolate untrusted code execution.
+
+Purpose
+
+- Secure execution
+- Isolation
+- Multi-tenant readiness
+- Independent runtime
+
+Location
 
 ```
-docker compose up --build
+sandbox/
 ```
 
 ---
@@ -327,58 +423,39 @@ docker compose up --build
 
 Run all tests
 
-```
+```bash
 pytest
 ```
 
-Current test modules
+Tests include
 
-- test_workflow.py
-- test_agents.py
-- test_trace.py
-- test_api.py
-
----
-
-# Production Considerations
-
-For local development, agent execution runs directly within the Python process.
-
-For production environments, untrusted execution can be isolated using:
-
-- Firecracker MicroVMs
-- gVisor Containers
-- Docker Sandbox
-
-The workflow orchestration remains unchanged while only the execution backend changes.
+- Agent Tests
+- API Tests
+- Workflow Tests
+- Trace Tests
 
 ---
 
-# Future Enhancements
+# Future Improvements
 
-- Firecracker integration
-- Langfuse integration
-- OpenTelemetry tracing
-- PostgreSQL persistence
-- Redis cache
+- Redis Event Streaming
+- Kafka Integration
+- Langfuse Integration
+- OpenTelemetry
+- Kubernetes Deployment
 - Authentication & Authorization
-- Kubernetes deployment
-- Prometheus metrics
-- Grafana dashboards
-- AI Agent Plugin Framework
+- Multi-Tenant Support
+- LLM Integration
+- Agent Memory
+- Human Approval Workflow
 
 ---
 
-# Demo Flow
+# Repository
 
-1. Open Temporal UI.
-2. Execute workflow using Swagger.
-3. Observe Planner → Workers → Reviewer execution.
-4. View workflow history in Temporal.
-5. View execution traces.
-6. Monitor workflow status.
-7. Demonstrate parallel worker execution.
-8. Explain retry strategy and durable workflow.
+GitHub
+
+https://github.com/rgar-lang/agentic-workflow
 
 ---
 
@@ -388,4 +465,6 @@ The workflow orchestration remains unchanged while only the execution backend ch
 
 Senior Full Stack QA Engineer
 
-Enterprise Agentic Workflow POC
+Automation | AI | Agentic Workflows | Temporal | FastAPI | Python
+
+---
